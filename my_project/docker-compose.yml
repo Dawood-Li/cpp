@@ -1,0 +1,57 @@
+version: '3'  
+
+networks:  
+  net01:  
+    driver: bridge
+
+services:  
+
+  nginx:
+    image: nginx
+    ports: [ 80:80 ] # 最终将作为整套服务的唯一暴露端口
+    networks: [ net01 ]
+    restart: always  
+    depends_on: [ app ]  
+    # volumes:
+      # - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf # 配置
+  
+  db:  
+    image: mariadb
+    ports: [ 3306:3306 ] # 仅调试 正式上限则不暴露端口 仅使用docker网络
+    volumes: [
+      ./mariadb/init:/docker-entrypoint-initdb.d,
+      ./mariadb/data:/var/lib/mysql,
+    ]
+    environment: [
+      MYSQL_ROOT_PASSWORD=1234  
+    ]
+    networks: [ net01 ]
+    restart: always  
+
+  redis-master:
+    image: redis
+    ports: [ 6379:6379 ]
+    networks: [ net01 ]
+    restart: always
+    command: redis-server --requirepass 1234
+    volumes: [ ./redis-data:/data ]
+
+  # redis-slave:
+  #   image: redis
+  #   ports: [ 6380:6379 ]
+  #   networks: [ net01 ]
+  #   restart: always
+  #   command: redis-server --slaveof redis-master 6379
+  #   volumes: [ ./redis-data:/data ]
+  
+  app:  
+    build:  
+      context: .  
+      dockerfile: ./app/Dockerfile  
+    ports: [ 8000:8000 ] # 仅调试 正式上限则不暴露端口 仅使用docker网络
+    volumes: [
+      ./app/data:/app/data  
+    ]
+    networks: [ net01 ]
+    restart: always  
+    depends_on: [ db, redis-master ]

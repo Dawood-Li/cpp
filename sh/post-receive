@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# 远端git钩子 调用~/$project/init.sh来初始化项目
+echo \"[ post receive ] start \"
+
+# 广播通知
+# wall "[ new push ]"
+
+# 邮件通知
+echo "New Push to $project.git" | mail -s "New_Push" dawood_li@outlook.com
+
+echo \"[ post receive ] clone \"
+rm -rf "~/$project"
+git clone "~/$project.git" "~/$project" > /dev/null 2>&1
+echo \"[ post receive ] clone done \"
+
+echo \"[ post receive ] init \"
+chmod +x "~/$project/init.sh"
+echo "1234" | sudo -S bash "~/$project/init.sh"
+echo \"[ post receive ] init done \"
+
+echo \"[ post receive ] done \"
